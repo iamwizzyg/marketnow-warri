@@ -11,7 +11,15 @@ SCOPES = [
 
 def get_sheet():
     import json
-    creds_json = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+    import os
+    print("DEBUG: Attempting to load GOOGLE_CREDENTIALS")
+    creds_raw = os.getenv("GOOGLE_CREDENTIALS")
+    if not creds_raw:
+        print("DEBUG: GOOGLE_CREDENTIALS is None or empty")
+        raise ValueError("GOOGLE_CREDENTIALS not set")
+    print(f"DEBUG: GOOGLE_CREDENTIALS length = {len(creds_raw)}")
+    creds_json = json.loads(creds_raw)
+    print(f"DEBUG: JSON parsed, client_email = {creds_json.get('client_email')}")
     creds = Credentials.from_service_account_info(creds_json, scopes=SCOPES)
     client = gspread.authorize(creds)
     sheet = client.open_by_key(os.getenv("GOOGLE_SHEET_ID"))
