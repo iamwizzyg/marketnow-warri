@@ -47,20 +47,31 @@ def add_listing(parsed_data, phone):
         print(f"SHEETS ERROR: {traceback.format_exc()}", flush=True)
         raise
 
-def search_listings(query):
+def search_listings(query, price_limit=None):
     sheet = get_sheet()
     all_rows = sheet.get_all_records()
-    # Strip buyer keywords to get the actual product name
-    skip_words = ["find", "looking", "where", "buy", "price", "any", "who", "get", "has", "for"]
+    skip_words = ["find", "looking", "where", "buy", "price", "any", "who",
+                  "get", "has", "for", "can", "i", "under", "below", "cheap",
+                  "less", "than", "how", "much", "what", "igbudu", "enerhen", "warri"]
     query_words = [w.lower() for w in query.split() if w.lower() not in skip_words]
-    
+
     matches = []
     for row in all_rows:
         product = str(row.get("Product", "")).lower()
         location = str(row.get("Location", "")).lower()
         for word in query_words:
             if word in product or word in location:
-                matches.append(row)
+                if price_limit:
+                    try:
+                        import re
+                        price_str = str(row.get("Price", "0"))
+                        price_num = int(re.sub(r'[^\d]', '', price_str))
+                        if price_num <= price_limit:
+                            matches.append(row)
+                    except:
+                        matches.append(row)
+                else:
+                    matches.append(row)
                 break
     return matches[:5]
 
