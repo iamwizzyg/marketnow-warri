@@ -74,9 +74,9 @@ def webhook():
                     f"Buyers can find you now."
                 )
         except Exception as e:
-    import traceback
-    print(f"ERROR in trader flow: {traceback.format_exc()}")
-    msg.body("Something went wrong listing your stock. Please try again.")
+            import traceback
+            print(f"ERROR in trader flow: {traceback.format_exc()}")
+            msg.body("Something went wrong listing your stock. Please try again.")
 
     elif is_buyer_message(incoming_msg):
         try:
