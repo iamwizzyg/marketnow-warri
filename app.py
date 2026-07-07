@@ -5,18 +5,19 @@ from sheets import add_listing, search_listings
 from dotenv import load_dotenv
 import os
 import traceback
+import re
 
 load_dotenv()
 
 app = Flask(__name__)
 
+
 def classify_message(message):
     message_lower = message.lower()
-    
+
     trader_score = 0
     buyer_score = 0
-    
-    # Strong trader signals
+
     if any(w in message_lower for w in ["naira", "₦", "stall", "selling", "i get", "i have"]):
         trader_score += 3
     if any(w in message_lower for w in ["fresh", "available", "pieces", "kg", "bags", "units"]):
@@ -24,7 +25,6 @@ def classify_message(message):
     if any(char.isdigit() for char in message_lower):
         trader_score += 1
 
-    # Strong buyer signals
     if any(w in message_lower for w in ["find", "looking for", "where can", "who has", "who get", "any"]):
         buyer_score += 3
     if any(w in message_lower for w in ["buy", "price", "how much", "cost", "under", "cheap"]):
@@ -43,15 +43,29 @@ def classify_message(message):
 
 
 def extract_price_limit(message):
-    """Extract price ceiling from messages like 'under 5000' or 'below ₦5000'"""
-    import re
     message_lower = message.lower()
-    
     if any(w in message_lower for w in ["under", "below", "less than", "cheaper than", "max"]):
         numbers = re.findall(r'[\d,]+', message)
         if numbers:
             return int(numbers[-1].replace(',', ''))
     return None
+
+
+def welcome_message():
+    return (
+        "👋 Welcome to *MarketNow Warri* 🛒\n"
+        "Built by Uche Wisdom Godwin | 3MTT Fellow, Delta State\n\n"
+        "I connect market traders and buyers in Warri in real time — "
+        "no app download needed, just WhatsApp.\n\n"
+        "*📦 Are you a TRADER?*\n"
+        "Send your stock like this:\n"
+        "'Fresh croaker 20 pieces 4500 naira Igbudu stall 14'\n\n"
+        "*🛍️ Are you a BUYER?*\n"
+        "Search like this:\n"
+        "'find croaker Igbudu'\n"
+        "'where can I buy tomatoes under ₦3000'\n\n"
+        "Type HELP anytime to see this again."
+    )
 
 
 @app.route("/webhook", methods=["POST"])
@@ -67,6 +81,10 @@ def webhook():
         msg.body("Send your stock update or search for a product.")
         return str(resp)
 
+    if incoming_msg.lower() in ["help", "hi", "hello", "start", "menu", "hey"]:
+        msg.body(welcome_message())
+        return str(resp)
+
     intent = classify_message(incoming_msg)
 
     if intent == "trader":
@@ -75,7 +93,7 @@ def webhook():
             parsed = parse_trader_message(incoming_msg)
             print(f"DEBUG: Parsed = {parsed}", flush=True)
             add_listing(parsed, sender_phone)
-            print("DEBUG: Listing added", flush=True)
+            print("DEBUG: Listing added successfully", flush=True)
             msg.body(
                 f"Stock listed! ✅\n"
                 f"Product: {parsed.get('product')}\n"
@@ -83,7 +101,8 @@ def webhook():
                 f"Price: {parsed.get('price')}\n"
                 f"Location: {parsed.get('location')}\n"
                 f"Stall: {parsed.get('stall')}\n\n"
-                f"Buyers can find you now."
+                f"Buyers can find you now.\n"
+                f"Send HELP to see all commands."
             )
         except Exception as e:
             print(f"ERROR in trader flow: {traceback.format_exc()}", flush=True)
@@ -102,16 +121,10 @@ def webhook():
             msg.body("Search failed. Please try again in a moment.")
 
     else:
-        msg.body(
-            "Welcome to MarketNow Warri 🛒\n\n"
-            "*Traders:* Send your stock update\n"
-            "Example: 'Fresh croaker 20 pieces 4500 naira Igbudu stall 14'\n\n"
-            "*Buyers:* Search for what you need\n"
-            "Example: 'find croaker Igbudu'\n"
-            "Example: 'where can I buy tomatoes under ₦3000'"
-        )
+        msg.body(welcome_message())
 
     return str(resp)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
