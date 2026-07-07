@@ -347,11 +347,8 @@ Stall: 14</div>
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://wa.me/14155238886?text=join%20atomic-statement" alt="Scan to test on WhatsApp" />
         </div>
         <div class="qr-label">Scan with your phone camera to open WhatsApp</div>
-        <div class="join-code">First send: join atomic-statement</div>
-         <h3>Or</h3>
-        <p>Send a WhatsApp message to: <strong>+1 415 523 8886</strong><br>
-        First send: <strong>join atomic-statement</strong><br>
-        </p>
+        <div class="qr-label">Or</div>
+        <div class="qr-label">Send a WhatsApp message to: <strong>+1 415 523 8886</div>
         <div class="qr-label">Then send any trader or buyer message to test</div>
     </div>
 </div>
