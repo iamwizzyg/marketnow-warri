@@ -1,50 +1,69 @@
-from google import genai
-import os
 import json
-from dotenv import load_dotenv
-
-load_dotenv()
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
 
 def parse_trader_message(message):
-    prompt = f"""
-You are a market assistant in Warri, Nigeria.
-A trader just sent this WhatsApp message: "{message}"
-The message may be in English, Pidgin English, or broken English.
+    words = message.lower().split()
+    original_words = message.split()
+    
+    # Find product (word after "fresh" or first noun)
+    product = "not specified"
+    for i, w in enumerate(words):
+        if w in ["fresh", "selling", "available"] and i+1 < len(original_words):
+            product = original_words[i+1]
+            break
+    if product == "not specified" and original_words:
+        product = original_words[0]
 
-Extract the following and return ONLY valid JSON, nothing else:
-{{
-  "product": "name of product",
-  "quantity": "number and unit",
-  "price": "price in naira",
-  "location": "market or area name",
-  "stall": "stall number or description if mentioned",
-  "confidence": "high/medium/low based on how clear the message was"
-}}
+    # Find quantity
+    quantity = "not specified"
+    for i, w in enumerate(words):
+        if w.isdigit():
+            unit = words[i+1] if i+1 < len(words) else "pieces"
+            quantity = f"{w} {unit}"
+            break
 
-If any field is missing from the message, use "not specified".
-Return ONLY the JSON object. No explanation. No markdown.
-"""
-    response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
-    raw = response.text.strip()
-    return json.loads(raw)
+    # Find price (number before "naira")
+    price = "not specified"
+    for i, w in enumerate(words):
+        if w == "naira" and i > 0:
+            price = f"₦{words[i-1]}"
+            break
+
+    # Find location
+    markets = ["igbudu", "enerhen", "ptd", "ekurede", "warri", "effurun", "ugborikoko"]
+    location = "not specified"
+    for w in words:
+        if w in markets:
+            location = w.title()
+            break
+
+    # Find stall
+    stall = "not specified"
+    for i, w in enumerate(words):
+        if w == "stall" and i+1 < len(words):
+            stall = words[i+1]
+            break
+
+    return {
+        "product": product,
+        "quantity": quantity,
+        "price": price,
+        "location": location,
+        "stall": stall,
+        "confidence": "high"
+    }
 
 
 def format_buyer_results(results, query):
     if not results:
         return "No listings found for that item right now. Try again later or check another market."
-
-    prompt = f"""
-A buyer in Warri is looking for: "{query}"
-Here are the current listings from traders:
-{json.dumps(results, indent=2)}
-
-Write a short, friendly WhatsApp reply (max 5 lines) listing what's available.
-Include product, price, quantity, location and stall number.
-Write in simple English. Be concise. No bullet symbols that don't render on WhatsApp.
-Start with: "Here's what I found 👇"
-"""
-    response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
-    return response.text.strip()
+    
+    reply = "Here's what I found 👇\n\n"
+    for r in results[:3]:
+        reply += (
+            f"Product: {r.get('Product', 'N/A')}\n"
+            f"Price: {r.get('Price', 'N/A')}\n"
+            f"Quantity: {r.get('Quantity', 'N/A')}\n"
+            f"Location: {r.get('Location', 'N/A')}\n"
+            f"Stall: {r.get('Stall', 'N/A')}\n\n"
+        )
+    return reply.strip()
