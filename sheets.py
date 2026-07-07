@@ -50,13 +50,18 @@ def add_listing(parsed_data, phone):
 def search_listings(query):
     sheet = get_sheet()
     all_rows = sheet.get_all_records()
-    query_lower = query.lower()
-    matches = [
-        row
-        for row in all_rows
-        if query_lower in str(row.get("Product", "")).lower()
-        or query_lower in str(row.get("Location", "")).lower()
-    ]
+    # Strip buyer keywords to get the actual product name
+    skip_words = ["find", "looking", "where", "buy", "price", "any", "who", "get", "has", "for"]
+    query_words = [w.lower() for w in query.split() if w.lower() not in skip_words]
+    
+    matches = []
+    for row in all_rows:
+        product = str(row.get("Product", "")).lower()
+        location = str(row.get("Location", "")).lower()
+        for word in query_words:
+            if word in product or word in location:
+                matches.append(row)
+                break
     return matches[:5]
 
 
