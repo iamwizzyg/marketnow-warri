@@ -27,19 +27,25 @@ def get_sheet():
 
 
 def add_listing(parsed_data, phone):
-    sheet = get_sheet()
-    row = [
-        datetime.now().strftime("%Y-%m-%d %H:%M"),
-        parsed_data.get("product", "not specified"),
-        parsed_data.get("quantity", "not specified"),
-        parsed_data.get("price", "not specified"),
-        parsed_data.get("location", "not specified"),
-        parsed_data.get("stall", "not specified"),
-        phone,
-    ]
-    sheet.append_row(row)
-    return True
-
+    try:
+        sheet = get_sheet()
+        row = [
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
+            parsed_data.get("product", "not specified"),
+            parsed_data.get("quantity", "not specified"),
+            parsed_data.get("price", "not specified"),
+            parsed_data.get("location", "not specified"),
+            parsed_data.get("stall", "not specified"),
+            phone
+        ]
+        print(f"WRITING ROW: {row}", flush=True)
+        sheet.append_row(row)
+        print("ROW WRITTEN SUCCESSFULLY", flush=True)
+        return True
+    except Exception as e:
+        import traceback
+        print(f"SHEETS ERROR: {traceback.format_exc()}", flush=True)
+        raise
 
 def search_listings(query):
     sheet = get_sheet()
