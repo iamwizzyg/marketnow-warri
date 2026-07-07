@@ -5,6 +5,8 @@ from sheets import add_listing, search_listings
 from dotenv import load_dotenv
 import os
 import traceback
+import sys
+sys.stdout.flush()
 
 load_dotenv()
 
@@ -29,6 +31,7 @@ def webhook():
     msg = resp.message()
 
     print(f"INCOMING: {incoming_msg} from {sender_phone}")
+    sys.stdout.flush()
 
     if not incoming_msg:
         msg.body("Send your stock update or search for a product.")
@@ -58,6 +61,7 @@ def webhook():
         except Exception as e:
             print(f"ERROR in trader flow: {traceback.format_exc()}")
             msg.body("Something went wrong listing your stock. Please try again.")
+            sys.stdout.flush()
 
     elif is_buyer_message(incoming_msg):
         try:
@@ -68,6 +72,7 @@ def webhook():
         except Exception as e:
             print(f"ERROR in buyer flow: {traceback.format_exc()}")
             msg.body("Search failed. Please try again in a moment.")
+            sys.stdout.flush()
 
     else:
         msg.body(
