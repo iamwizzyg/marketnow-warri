@@ -1,48 +1,25 @@
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 from ai_parser import parse_trader_message, format_buyer_results
-from ai_parser import parse_trader_message, format_buyer_results
-from sheets import add_listing, search_listings
 from sheets import add_listing, search_listings
 from dotenv import load_dotenv
 import os
+import traceback
 
 load_dotenv()
 
 app = Flask(__name__)
 
-TRADER_KEYWORDS = [
-    "fresh",
-    "selling",
-    "available",
-    "i get",
-    "i have",
-    "naira",
-    "pieces",
-    "kg",
-    "stall",
-]
-BUYER_KEYWORDS = [
-    "find",
-    "looking",
-    "where",
-    "buy",
-    "price",
-    "any",
-    "who get",
-    "who has",
-]
-
+TRADER_KEYWORDS = ["fresh", "selling", "available", "i get", "i have", "naira", "pieces", "kg", "stall"]
+BUYER_KEYWORDS = ["find", "looking", "where", "buy", "price", "any", "who get", "who has"]
 
 def is_trader_message(message):
     message_lower = message.lower()
     return any(keyword in message_lower for keyword in TRADER_KEYWORDS)
 
-
 def is_buyer_message(message):
     message_lower = message.lower()
     return any(keyword in message_lower for keyword in BUYER_KEYWORDS)
-
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -51,13 +28,17 @@ def webhook():
     resp = MessagingResponse()
     msg = resp.message()
 
+    print(f"INCOMING: {incoming_msg} from {sender_phone}")
+
     if not incoming_msg:
         msg.body("Send your stock update or search for a product.")
         return str(resp)
 
     if is_trader_message(incoming_msg):
         try:
+            print("DEBUG: Detected trader message")
             parsed = parse_trader_message(incoming_msg)
+            print(f"DEBUG: Parsed result: {parsed}")
             if parsed.get("confidence") == "low":
                 msg.body(
                     "I couldn't read that clearly. Try again like this:\n"
@@ -65,6 +46,7 @@ def webhook():
                 )
             else:
                 add_listing(parsed, sender_phone)
+                print("DEBUG: Listing added successfully")
                 msg.body(
                     f"Stock listed! ✅\n"
                     f"Product: {parsed.get('product')}\n"
@@ -74,16 +56,17 @@ def webhook():
                     f"Buyers can find you now."
                 )
         except Exception as e:
-            import traceback
             print(f"ERROR in trader flow: {traceback.format_exc()}")
             msg.body("Something went wrong listing your stock. Please try again.")
 
     elif is_buyer_message(incoming_msg):
         try:
+            print("DEBUG: Detected buyer message")
             results = search_listings(incoming_msg)
             reply = format_buyer_results(results, incoming_msg)
             msg.body(reply)
         except Exception as e:
+            print(f"ERROR in buyer flow: {traceback.format_exc()}")
             msg.body("Search failed. Please try again in a moment.")
 
     else:
@@ -96,7 +79,6 @@ def webhook():
         )
 
     return str(resp)
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
