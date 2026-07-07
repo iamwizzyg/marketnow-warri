@@ -27,7 +27,7 @@ Extract the following and return ONLY valid JSON, nothing else:
 If any field is missing from the message, use "not specified".
 Return ONLY the JSON object. No explanation. No markdown.
 """
-    response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+    response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
     raw = response.text.strip()
     return json.loads(raw)
 
@@ -46,5 +46,5 @@ Include product, price, quantity, location and stall number.
 Write in simple English. Be concise. No bullet symbols that don't render on WhatsApp.
 Start with: "Here's what I found 👇"
 """
-    response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+    response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
     return response.text.strip()
