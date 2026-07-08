@@ -349,6 +349,7 @@ Stall: 14</div>
         <div class="qr-label">Scan with your phone camera to open WhatsApp</div>
         <div class="qr-label">Or</div>
         <div class="qr-label">Send a WhatsApp message to: <strong>+1 415 523 8886</div>
+        <div class="join-code">First send: join atomic-statement</div>
         <div class="qr-label">Then send any trader or buyer message to test</div>
     </div>
 </div>
